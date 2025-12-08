@@ -200,9 +200,9 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
                        spawnParticles(e.x, e.y, COL_NEON_RED, 12, 1.5); 
                        shakeRef.current = 8; 
                        if (e.isBoss) { 
-                           addMoney(1500, e.x, e.y); // FIXED: Add money BEFORE finishing game
+                           addMoney(500, e.x, e.y); // REDUCED BY 3 (1500 -> 500)
                            finishGame('VICTORY'); 
-                       } else addMoney(15, e.x, e.y); 
+                       } else addMoney(5, e.x, e.y); // REDUCED BY 3 (15 -> 5)
                    }
                    break;
                 }
@@ -218,7 +218,7 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
                  const s = soldiersRef.current[i];
                  if ((s.x - e.x)**2 + (s.y - e.y)**2 < (s.radius + e.radius)**2) {
                      soldiersRef.current.splice(i, 1); e.hp -= 30; spawnParticles(s.x, s.y, COL_NEON_BLUE, 8); shakeRef.current = 5;
-                     if (e.hp <= 0) { spawnParticles(e.x, e.y, COL_NEON_RED, 15); addMoney(15, e.x, e.y); return false; }
+                     if (e.hp <= 0) { spawnParticles(e.x, e.y, COL_NEON_RED, 15); addMoney(5, e.x, e.y); return false; } // REDUCED BY 3 (15 -> 5)
                  }
               }
           }

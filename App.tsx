@@ -190,10 +190,19 @@ const App: React.FC = () => {
           onPlayRound={incrementTrueWar}
         />;
       
-      // Locked Games
+      // Previously Locked Games - Now Active
       case 'minesweeper':
+        return <MinesweeperGame 
+          onBack={handleBackToHome} 
+          balance={user.balance} 
+          updateBalance={updateBalance} 
+        />;
       case 'tradeboss':
-        return <Home onPlayGame={handlePlayGame} balance={user.balance} userName={user.name} limits={limits} />;
+        return <TradeBossGame 
+          onBack={handleBackToHome} 
+          balance={user.balance} 
+          updateBalance={updateBalance} 
+        />;
       
       default:
         return <Home onPlayGame={handlePlayGame} balance={user.balance} userName={user.name} limits={limits} />;
