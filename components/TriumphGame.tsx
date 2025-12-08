@@ -146,8 +146,13 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
     roundEarningsRef.current = 0; 
     
     const angle = aimAngleRef.current;
-    // Always fire 50 balls for intensity in time mode, or based on level? Let's do fixed 30 for chaos
-    let ballsToFire = 30; 
+    
+    // Updated Logic: Start at 1, increase by 2 per level
+    // Level 1: 1 + (0)*2 = 1 ball
+    // Level 2: 1 + (1)*2 = 3 balls
+    // Level 3: 1 + (2)*2 = 5 balls
+    const ballsToFire = 1 + ((scoreRef.current - 1) * 2);
+
     let firedCount = 0;
     const vx = Math.cos(angle) * SPEED;
     const vy = Math.sin(angle) * SPEED;

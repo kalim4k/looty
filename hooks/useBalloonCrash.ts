@@ -51,6 +51,10 @@ export const useBalloonCrash = () => {
     setGameState(currentState => {
       if (currentState !== GameState.INFLATING) return currentState;
       
+      // Safety: Prevent immediate cashout (ghost clicks on mobile)
+      // Must play for at least 500ms
+      if (Date.now() - startTimeRef.current < 500) return currentState;
+
       cancelAnimationFrame(animationFrameRef.current);
       
       // We need to capture the current profit at the moment of encash

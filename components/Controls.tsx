@@ -54,7 +54,6 @@ const Controls: React.FC<ControlsProps> = ({ gameState, onStart, onEncash }) => 
       {!isPlaying ? (
         <button
           onClick={handleStart}
-          onTouchStart={handleStart}
           disabled={isDisabled}
           className={`
             w-full py-6 rounded-2xl text-2xl font-black uppercase tracking-wider shadow-[0_10px_0_rgb(30,58,138)] transform transition-all active:scale-95 active:shadow-none active:translate-y-[10px]
@@ -67,7 +66,6 @@ const Controls: React.FC<ControlsProps> = ({ gameState, onStart, onEncash }) => 
       ) : (
         <button
           onClick={onEncash}
-          onTouchStart={onEncash}
           className={`
             w-full py-6 rounded-2xl text-2xl font-black uppercase tracking-wider shadow-[0_10px_0_rgb(20,83,45)] transform transition-all active:scale-95 active:shadow-none active:translate-y-[10px]
             bg-gradient-to-b from-green-500 to-green-700 text-white

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { IconChevronLeft, IconTrophy, IconWallet, IconUser } from './Icons';
+import { IconChevronLeft, IconTrophy, IconUser } from './Icons';
 
 // --- Constants & Config ---
 const CANVAS_WIDTH = 360;
@@ -40,6 +40,7 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
   const progressRef = useRef(0);
   const maxProgressRef = useRef(1000);
   const runMoneyRef = useRef(0); 
+  const balanceAddedRef = useRef(false); // Security flag to prevent double payment
   const playerXRef = useRef(CANVAS_WIDTH / 2);
   const fireRateModRef = useRef(1.0); const spreadShotRef = useRef(false); const damageModRef = useRef(1);
   const soldiersRef = useRef<Soldier[]>([]); const bulletsRef = useRef<Bullet[]>([]); const enemiesRef = useRef<Enemy[]>([]);
@@ -60,17 +61,23 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
   };
 
   const initGame = () => {
-    // Increment daily usage
-    onPlayRound();
+    // Increment daily usage only on initial start, not needed here as we use onBack to exit
+    // onPlayRound is called by the MENU button below
     
     stateRef.current = 'PLAYING'; setGameState('PLAYING');
     fireRateModRef.current = 1.0; spreadShotRef.current = false; damageModRef.current = 1; runMoneyRef.current = 0; shakeRef.current = 0;
+    balanceAddedRef.current = false;
     playerXRef.current = CANVAS_WIDTH / 2;
     soldiersRef.current = [{ id: 0, x: CANVAS_WIDTH / 2, y: HERO_Y, radius: 14, active: true, offsetAngle: 0, offsetDist: 0 }];
     bulletsRef.current = []; enemiesRef.current = []; gatesRef.current = []; powerUpsRef.current = []; particlesRef.current = []; textsRef.current = [];
     progressRef.current = 0; maxProgressRef.current = 6000; frameCountRef.current = 0;
     setSoldierCount(1); setLevelProgress(0); setDisplayMoney(0); setHudMoney(0);
   };
+
+  const handleMenuStart = () => {
+    onPlayRound();
+    initGame();
+  }
 
   const spawnBoss = () => {
     stateRef.current = 'BOSS'; setGameState('BOSS'); enemiesRef.current = []; 
@@ -119,10 +126,16 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
   };
 
   const finishGame = (status: 'VICTORY' | 'GAMEOVER') => {
+     if (stateRef.current === 'VICTORY' || stateRef.current === 'GAMEOVER') return; // Prevent double call
+     
      setGameState(status);
      stateRef.current = status;
-     // Add total run money to global balance
-     updateBalance(runMoneyRef.current);
+     
+     // Only add money once
+     if (!balanceAddedRef.current) {
+        updateBalance(runMoneyRef.current);
+        balanceAddedRef.current = true;
+     }
   };
 
   const update = () => {
@@ -182,7 +195,15 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
                 if (!e.active) continue;
                 if ((b.x - e.x)**2 + (b.y - e.y)**2 < (b.radius + e.radius + 10)**2) {
                    b.active = false; e.hp -= (b.damage || 1); spawnParticles(b.x, b.y, '#fff', 1, 0.5);
-                   if (e.hp <= 0) { e.active = false; spawnParticles(e.x, e.y, COL_NEON_RED, 12, 1.5); shakeRef.current = 8; if (e.isBoss) { finishGame('VICTORY'); addMoney(1500, e.x, e.y); } else addMoney(15, e.x, e.y); }
+                   if (e.hp <= 0) { 
+                       e.active = false; 
+                       spawnParticles(e.x, e.y, COL_NEON_RED, 12, 1.5); 
+                       shakeRef.current = 8; 
+                       if (e.isBoss) { 
+                           addMoney(1500, e.x, e.y); // FIXED: Add money BEFORE finishing game
+                           finishGame('VICTORY'); 
+                       } else addMoney(15, e.x, e.y); 
+                   }
                    break;
                 }
              }
@@ -210,7 +231,7 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
              const px = playerXRef.current;
              if (px > g.x && px < g.x + g.width) {
                  g.active = false; let count = soldiersRef.current.length; const prevCount = count;
-                 if (g.type === 'ADD') count += g.value; if (g.type === 'SUB') count = Math.max(1, count - g.value); if (g.type === 'MULT') count = Math.floor(count * g.value); if (g.type === 'DIV') count = Math.max(1, Math.floor(count / g.value));
+                 if (g.type === 'ADD') count += g.value; if (g.type === 'MULT') count = Math.floor(count * g.value); if (g.type === 'SUB') count = Math.max(1, count - g.value); if (g.type === 'DIV') count = Math.max(1, Math.floor(count / g.value));
                  const diff = count - prevCount;
                  if (diff > 0) { textsRef.current.push({ x: px, y: HERO_Y - 50, text: `+${diff}`, color: '#4ade80', life: 0.8, vy: -4, scale: 2.0, font: "900 30px" }); for(let k=0; k<diff; k++) soldiersRef.current.push({ id: Math.random(), x: px, y: HERO_Y, radius: 7, active: true, offsetAngle:0, offsetDist:0 }); }
                  else { textsRef.current.push({ x: px, y: HERO_Y - 50, text: `${diff}`, color: '#ef4444', life: 0.8, vy: -4, scale: 2.0, font: "900 30px" }); soldiersRef.current.splice(count); shakeRef.current = 5; }
@@ -309,9 +330,9 @@ const TrueWarGame: React.FC<TrueWarGameProps> = ({ onBack, balance, updateBalanc
          </div>
       </div>
       <canvas ref={canvasRef} width={CANVAS_WIDTH} height={CANVAS_HEIGHT} className="w-full h-full object-cover bg-slate-900" onMouseDown={handleStart} onMouseMove={handleMove} onMouseUp={handleEnd} onMouseLeave={handleEnd} onTouchStart={handleStart} onTouchMove={handleMove} onTouchEnd={handleEnd} />
-      {gameState === 'MENU' && ( <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center shadow-[0_0_60px_#3b82f6] mb-8 rotate-6 border-4 border-blue-400"><div className="text-6xl animate-pulse">⚔️</div></div><h1 className="text-7xl font-black text-white mb-2 italic tracking-tighter drop-shadow-[0_0_20px_#3b82f6] text-center">TRUE<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">WAR</span></h1><p className="text-slate-400 mb-12 font-bold uppercase tracking-[0.3em] text-xs">Dominez la route</p><button onClick={initGame} className="px-12 py-5 bg-white text-black rounded-full font-black text-2xl shadow-[0_0_40px_rgba(255,255,255,0.3)] active:scale-95 transition-all hover:scale-110 hover:shadow-[0_0_60px_#3b82f6]">COMBATTRE</button></div> )}
-      {gameState === 'GAMEOVER' && ( <div className="absolute inset-0 z-30 bg-red-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><div className="text-7xl font-black text-red-500 mb-4 drop-shadow-[0_0_30px_#ef4444] tracking-tighter italic">ÉCHEC</div><div className="text-white/60 font-bold text-lg mb-8 uppercase tracking-widest">Armée détruite</div><button onClick={initGame} className="px-10 py-4 border-2 border-white text-white rounded-full font-black text-xl hover:bg-white hover:text-black transition-all active:scale-95">RÉESSAYER</button></div> )}
-      {gameState === 'VICTORY' && ( <div className="absolute inset-0 z-30 bg-blue-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><IconTrophy className="w-32 h-32 text-yellow-400 mb-6 drop-shadow-[0_0_50px_#fbbf24]" /><div className="text-6xl font-black text-white mb-2 drop-shadow-lg italic">VICTOIRE!</div><div className="flex flex-col items-center my-8 p-6 bg-white/5 rounded-3xl border border-white/10 w-64"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Gains Totaux</div><div className="text-5xl font-mono font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{displayMoney} <span className="text-3xl">FCFA</span></div></div><button onClick={initGame} className="px-12 py-5 bg-blue-500 text-white rounded-full font-black text-xl shadow-[0_0_30px_#3b82f6] active:scale-95 transition-transform hover:bg-blue-400">REJOUER</button></div> )}
+      {gameState === 'MENU' && ( <div className="absolute inset-0 z-30 bg-black/80 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><div className="w-32 h-32 rounded-[2rem] bg-gradient-to-br from-blue-600 to-indigo-900 flex items-center justify-center shadow-[0_0_60px_#3b82f6] mb-8 rotate-6 border-4 border-blue-400"><div className="text-6xl animate-pulse">⚔️</div></div><h1 className="text-7xl font-black text-white mb-2 italic tracking-tighter drop-shadow-[0_0_20px_#3b82f6] text-center">TRUE<br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">WAR</span></h1><p className="text-slate-400 mb-12 font-bold uppercase tracking-[0.3em] text-xs">Dominez la route</p><button onClick={handleMenuStart} className="px-12 py-5 bg-white text-black rounded-full font-black text-2xl shadow-[0_0_40px_rgba(255,255,255,0.3)] active:scale-95 transition-all hover:scale-110 hover:shadow-[0_0_60px_#3b82f6]">COMBATTRE</button></div> )}
+      {gameState === 'GAMEOVER' && ( <div className="absolute inset-0 z-30 bg-red-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><div className="text-7xl font-black text-red-500 mb-4 drop-shadow-[0_0_30px_#ef4444] tracking-tighter italic">ÉCHEC</div><div className="text-white/60 font-bold text-lg mb-8 uppercase tracking-widest">Armée détruite</div><button onClick={onBack} className="px-10 py-4 border-2 border-white text-white rounded-full font-black text-xl hover:bg-white hover:text-black transition-all active:scale-95">RETOURNER</button></div> )}
+      {gameState === 'VICTORY' && ( <div className="absolute inset-0 z-30 bg-blue-950/90 backdrop-blur-md flex flex-col items-center justify-center animate-pop-in"><IconTrophy className="w-32 h-32 text-yellow-400 mb-6 drop-shadow-[0_0_50px_#fbbf24]" /><div className="text-6xl font-black text-white mb-2 drop-shadow-lg italic">VICTOIRE!</div><div className="flex flex-col items-center my-8 p-6 bg-white/5 rounded-3xl border border-white/10 w-64"><div className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-2">Gains Totaux</div><div className="text-5xl font-mono font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">{displayMoney} <span className="text-3xl">FCFA</span></div></div><button onClick={onBack} className="px-12 py-5 bg-blue-500 text-white rounded-full font-black text-xl shadow-[0_0_30px_#3b82f6] active:scale-95 transition-transform hover:bg-blue-400">RETOURNER</button></div> )}
       {gameState === 'PLAYING' && frameCountRef.current < 120 && ( <div className="absolute bottom-32 left-0 right-0 flex justify-center pointer-events-none animate-pulse"><div className="bg-black/80 backdrop-blur-md px-6 py-3 rounded-full text-white font-bold tracking-wider border border-white/20 shadow-[0_0_20px_#3b82f6]">↔️ GLISSER POUR BOUGER</div></div> )}
     </div>
   );
