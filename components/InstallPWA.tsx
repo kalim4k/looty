@@ -47,7 +47,7 @@ const InstallPWA: React.FC = () => {
       <div className="bg-slate-800/95 backdrop-blur-xl border border-slate-700 rounded-2xl p-4 shadow-[0_0_50px_rgba(0,0,0,0.5)] flex items-center justify-between gap-4">
         <div className="flex items-center gap-4">
            <img 
-              src="https://bienetrechien.com/wp-content/uploads/2025/12/ChatGPT-Image-8-dec.-2025-10_16_39.png" 
+              src="https://bienetrechien.com/wp-content/uploads/2025/12/Gemini_Generated_Image_zh832bzh832bzh83.png" 
               alt="Looty Icon" 
               className="w-14 h-14 rounded-xl shadow-lg"
            />

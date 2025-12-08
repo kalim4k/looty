@@ -174,8 +174,8 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
 
       {/* Withdrawal Popup */}
       {showWithdraw && (
-          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm animate-pop-in p-0 sm:p-4">
-              <div className="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto relative">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-pop-in p-4">
+              <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto relative shadow-2xl">
                   <button 
                     onClick={() => { setShowWithdraw(false); setWithdrawError(''); setSelectedMethod(null); }}
                     className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center"

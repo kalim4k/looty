@@ -1,10 +1,10 @@
-const CACHE_NAME = 'looty-cache-v3';
+const CACHE_NAME = 'looty-cache-v4';
 const urlsToCache = [
   '/',
   '/index.html',
   '/manifest.json',
   'https://cdn.tailwindcss.com',
-  'https://bienetrechien.com/wp-content/uploads/2025/12/ChatGPT-Image-8-dec.-2025-10_16_39.png',
+  'https://bienetrechien.com/wp-content/uploads/2025/12/Gemini_Generated_Image_zh832bzh832bzh83.png',
   'https://bienetrechien.com/wp-content/uploads/2025/08/Moov_Money_Flooz.png',
   'https://bienetrechien.com/wp-content/uploads/2025/08/Orange-Money-recrute-pour-ce-poste-22-Mars-2023.png',
   'https://bienetrechien.com/wp-content/uploads/2025/08/mtn-1.jpg',
