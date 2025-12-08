@@ -9,9 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react-dom": "^19.2.1",
+    "@vitejs/plugin-react": "^5.1.2",
     "react": "^19.2.1",
-    "framer-motion": "^11.0.8"
+    "react-dom": "^19.2.1",
+    "framer-motion": "^12.23.25",
+    "vite": "^7.2.7"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
