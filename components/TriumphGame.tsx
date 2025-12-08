@@ -58,7 +58,8 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
   const shootingIntervalRef = useRef<any>();
   const dragStartRef = useRef<{x: number, y: number} | null>(null);
   const aimAngleRef = useRef<number | null>(null);
-  const roundEarningsRef = useRef(0);
+  const totalSessionEarningsRef = useRef(0); // Tracks total earnings for the result screen
+  const isFiringRef = useRef(false); // Prevents premature end-of-turn detection
   
   // Timer Refs
   const lastTimeRef = useRef<number>(Date.now());
@@ -75,13 +76,14 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
     scoreRef.current = 1;
     ballsReturnedRef.current = 0;
     launcherPosRef.current = { x: CANVAS_WIDTH / 2 };
-    roundEarningsRef.current = 0;
+    totalSessionEarningsRef.current = 0;
     comboRef.current = 0;
     ballsRef.current = [];
     blocksRef.current = [];
     particlesRef.current = [];
     floatingTextsRef.current = [];
     gameStateRef.current = 'AIMING';
+    isFiringRef.current = false;
     
     // Timer Reset
     timeLeftRef.current = initialTime;
@@ -96,11 +98,13 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
   };
 
   const generateRow = () => {
+    // Shift existing blocks down
     blocksRef.current.forEach(b => {
       b.r++;
       b.y = b.r * (BLOCK_HEIGHT + BLOCK_PADDING) + BLOCK_PADDING + 80; 
     });
 
+    // Check Game Over
     if (blocksRef.current.some(b => !b.isBonus && b.y + BLOCK_HEIGHT > LAUNCHER_Y - 40)) {
       gameStateRef.current = 'GAMEOVER';
       setGameOver(true);
@@ -112,7 +116,9 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
     const bonusIndex = Math.floor(Math.random() * COLS);
 
     for (let c = 0; c < COLS; c++) {
-      if (c !== bonusIndex && Math.random() < 0.5) continue;
+      // DENSITY: 85% chance of block
+      if (c !== bonusIndex && Math.random() < 0.15) continue;
+      
       const isBonus = c === bonusIndex;
       const color = COLORS[Math.floor(Math.random() * COLORS.length)];
       blocksRef.current.push({
@@ -126,6 +132,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
       if (!isBonus) hasBlock = true;
     }
     
+    // Safety check: ensure at least one block if randomness failed
     if (!hasBlock) {
        const c = (bonusIndex + 1) % COLS;
        blocksRef.current.push({
@@ -139,32 +146,41 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
 
   const shootBalls = () => {
     if (gameStateRef.current !== 'AIMING' || aimAngleRef.current === null) return;
+    
     gameStateRef.current = 'SHOOTING';
+    isFiringRef.current = true; // Mark as firing to prevent update loop from ending turn immediately
+    
     ballsReturnedRef.current = 0;
     comboRef.current = 0; 
     firstBallLandedXRef.current = null;
-    roundEarningsRef.current = 0; 
+    // NOTE: Do NOT reset totalSessionEarningsRef here, we want it to accumulate.
     
     const angle = aimAngleRef.current;
     
-    // Updated Logic: Start at 1, increase by 2 per level
-    // Level 1: 1 + (0)*2 = 1 ball
-    // Level 2: 1 + (1)*2 = 3 balls
-    // Level 3: 1 + (2)*2 = 5 balls
+    // Level 1: 1 ball. Increase by 2 per level.
     const ballsToFire = 1 + ((scoreRef.current - 1) * 2);
 
     let firedCount = 0;
     const vx = Math.cos(angle) * SPEED;
     const vy = Math.sin(angle) * SPEED;
 
-    shootingIntervalRef.current = setInterval(() => {
-      if (firedCount >= ballsToFire) {
-        clearInterval(shootingIntervalRef.current);
-        return;
-      }
-      ballsRef.current.push({ x: launcherPosRef.current.x, y: LAUNCHER_Y, vx, vy, active: true });
-      firedCount++;
-    }, 50); 
+    // Fire first ball immediately to prevent empty array issues
+    ballsRef.current.push({ x: launcherPosRef.current.x, y: LAUNCHER_Y, vx, vy, active: true });
+    firedCount++;
+
+    if (ballsToFire > 1) {
+        shootingIntervalRef.current = setInterval(() => {
+          if (firedCount >= ballsToFire) {
+            clearInterval(shootingIntervalRef.current);
+            isFiringRef.current = false; // All balls fired
+            return;
+          }
+          ballsRef.current.push({ x: launcherPosRef.current.x, y: LAUNCHER_Y, vx, vy, active: true });
+          firedCount++;
+        }, 50);
+    } else {
+        isFiringRef.current = false;
+    }
   };
 
   const update = () => {
@@ -232,7 +248,6 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
 
     blocksRef.current.forEach(b => {
       if (b.isBonus) {
-        // Bonus adds time in this mode? Or just money? Let's do pure money
         const pulse = (Math.sin(Date.now() / 150) + 1) * 2;
         ctx.shadowColor = '#22c55e'; ctx.strokeStyle = '#22c55e';
         ctx.lineWidth = 3; ctx.beginPath();
@@ -276,7 +291,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
 
         if (distSq < BALL_RADIUS * BALL_RADIUS) {
           if (b.isBonus) {
-             frameEarnings += 50; // Bonus block is worth more
+             frameEarnings += 50; 
              blocksRef.current.splice(i, 1);
              floatingTextsRef.current.push({ x: b.x + BLOCK_WIDTH/2, y: b.y, text: "+50", life: 1.0, color: '#4ade80', vy: -1 });
           } else {
@@ -304,7 +319,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
 
     if (frameEarnings > 0) {
        updateBalance(frameEarnings);
-       roundEarningsRef.current += frameEarnings;
+       totalSessionEarningsRef.current += frameEarnings;
     }
 
     floatingTextsRef.current.forEach(ft => {
@@ -326,12 +341,16 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
     ctx.restore();
 
     // Check end of turn
-    if (gameStateRef.current === 'SHOOTING' && ballsRef.current.filter(b => b.active).length === 0) {
-       gameStateRef.current = 'AIMING';
+    // IMPORTANT: Check !isFiringRef.current to ensure we don't end turn before balls are even spawned
+    if (gameStateRef.current === 'SHOOTING' && !isFiringRef.current && ballsRef.current.filter(b => b.active).length === 0) {
        scoreRef.current++;
        setUiScore(scoreRef.current);
        ballsRef.current = [];
-       generateRow();
+       generateRow(); // Generate immediately when last ball is dead
+       
+       if (gameStateRef.current !== 'GAMEOVER') {
+           gameStateRef.current = 'AIMING';
+       }
     }
     requestRef.current = requestAnimationFrame(update);
   };
@@ -370,7 +389,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
                </div>
                <div className="flex gap-8 mb-10 text-center">
                    <div><div className="text-gray-400 text-xs font-bold uppercase">Niveau</div><div className="text-3xl font-black text-white">{uiScore}</div></div>
-                   <div><div className="text-gray-400 text-xs font-bold uppercase">Gains</div><div className="text-3xl font-black text-yellow-400">{roundEarningsRef.current} <span className="text-sm">FCFA</span></div></div>
+                   <div><div className="text-gray-400 text-xs font-bold uppercase">Gains</div><div className="text-3xl font-black text-yellow-400">{totalSessionEarningsRef.current} <span className="text-sm">FCFA</span></div></div>
                </div>
                <button onClick={onBack} className="px-12 py-5 bg-white text-black font-black text-xl rounded-full shadow-[0_0_40px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 transition-all uppercase tracking-widest">Retour</button>
             </div>
