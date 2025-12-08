@@ -1,0 +1,21 @@
+{
+  "short_name": "Looty",
+  "name": "Looty App",
+  "icons": [
+    {
+      "src": "https://bienetrechien.com/wp-content/uploads/2025/12/ChatGPT-Image-8-dec.-2025-10_16_39.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://bienetrechien.com/wp-content/uploads/2025/12/ChatGPT-Image-8-dec.-2025-10_16_39.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "orientation": "portrait"
+}
