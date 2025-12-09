@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { IconBell, IconGift, IconDisc, IconTarget } from './Icons';
+import { IconBell, IconGift, IconTarget, IconGamepad, IconTrophy, IconWallet } from './Icons';
 
 interface HomeProps {
   onPlayGame: (gameId: string) => void;
@@ -63,39 +63,51 @@ const Home: React.FC<HomeProps> = ({ onPlayGame, balance, userName, limits }) =>
   const widgets = [
     { 
       id: 1,
-      title: "Bonus Quotidien", 
-      desc: "Réclamer 100 FCFA", 
-      icon: IconGift, 
-      colorFrom: "from-yellow-600/20", 
-      colorTo: "to-orange-600/20", 
-      borderColor: "border-orange-500/30",
-      iconBg: "bg-orange-500/20",
-      iconColor: "text-orange-400",
-      titleColor: "text-orange-300"
+      title: "Balloon Pop", 
+      desc: "Jusqu'à x500 de Gain", 
+      icon: IconTarget, 
+      colorFrom: "from-pink-600/20", 
+      colorTo: "to-red-600/20", 
+      borderColor: "border-pink-500/30",
+      iconBg: "bg-pink-500/20",
+      iconColor: "text-pink-400",
+      titleColor: "text-pink-300"
     },
     { 
       id: 2,
-      title: "Roue Fortune", 
-      desc: "1 Tirage Gratuit", 
-      icon: IconDisc, 
-      colorFrom: "from-purple-600/20", 
-      colorTo: "to-pink-600/20", 
-      borderColor: "border-purple-500/30",
-      iconBg: "bg-purple-500/20",
-      iconColor: "text-purple-400",
-      titleColor: "text-purple-300"
+      title: "True War", 
+      desc: "Battez le Boss Final", 
+      icon: IconGamepad, 
+      colorFrom: "from-blue-600/20", 
+      colorTo: "to-cyan-600/20", 
+      borderColor: "border-blue-500/30",
+      iconBg: "bg-blue-500/20",
+      iconColor: "text-blue-400",
+      titleColor: "text-blue-300"
     },
     { 
       id: 3,
-      title: "Quête Hebdo", 
-      desc: "Gagner 5000 FCFA", 
-      icon: IconTarget, 
+      title: "Retraits Mobiles", 
+      desc: "Orange, MTN, Moov", 
+      icon: IconWallet, 
       colorFrom: "from-emerald-600/20", 
-      colorTo: "to-teal-600/20", 
+      colorTo: "to-green-600/20", 
       borderColor: "border-emerald-500/30",
       iconBg: "bg-emerald-500/20",
       iconColor: "text-emerald-400",
       titleColor: "text-emerald-300"
+    },
+    { 
+      id: 4,
+      title: "Triumph", 
+      desc: "Cassez les Briques", 
+      icon: IconTrophy, 
+      colorFrom: "from-purple-600/20", 
+      colorTo: "to-indigo-600/20", 
+      borderColor: "border-purple-500/30",
+      iconBg: "bg-purple-500/20",
+      iconColor: "text-purple-400",
+      titleColor: "text-purple-300"
     }
   ];
 
