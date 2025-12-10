@@ -5,6 +5,7 @@ import MinesweeperGame from './components/MinesweeperGame';
 import TradeBossGame from './components/TradeBossGame';
 import TriumphGame from './components/TriumphGame';
 import TrueWarGame from './components/TrueWarGame';
+import NeonHockeyGame from './components/NeonHockeyGame';
 import Wallet from './components/Wallet';
 import Profile from './components/Profile';
 import BottomNav from './components/BottomNav';
@@ -12,7 +13,7 @@ import InstallPWA from './components/InstallPWA';
 import Onboarding from './components/Onboarding';
 import ResourceLoader from './components/ResourceLoader';
 
-type View = 'home' | 'wallet' | 'profile' | 'balloon' | 'triumph' | 'minesweeper' | 'mine' | 'quizzy' | 'tradeboss' | 'truewar';
+type View = 'home' | 'wallet' | 'profile' | 'balloon' | 'triumph' | 'minesweeper' | 'mine' | 'quizzy' | 'tradeboss' | 'truewar' | 'neonhockey';
 
 interface UserData {
   name: string;
@@ -25,6 +26,7 @@ interface GameLimits {
   balloonCount: number; // Max 15
   trueWarCount: number; // Max 1
   triumphSecondsRemaining: number; // Max 60
+  neonHockeyCount: number; // Max 5
   adClicks: { [index: number]: number }; // Max 3 per index
 }
 
@@ -33,6 +35,7 @@ const INITIAL_LIMITS: GameLimits = {
   balloonCount: 0,
   trueWarCount: 0,
   triumphSecondsRemaining: 60,
+  neonHockeyCount: 0,
   adClicks: {}
 };
 
@@ -51,7 +54,10 @@ const App: React.FC = () => {
       if (parsed.date !== new Date().toDateString()) {
         return INITIAL_LIMITS;
       }
-      // Migration: Handle old number type for adClicks
+      // Migration: Ensure new fields exist
+      if (parsed.neonHockeyCount === undefined) {
+         return { ...parsed, neonHockeyCount: 0 };
+      }
       if (typeof parsed.adClicks === 'number') {
         return { ...parsed, adClicks: {} };
       }
@@ -64,9 +70,6 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>('home');
   
   // Loading State for Resources
-  // If setup is complete, we assume resources are loaded for this session, 
-  // but we can force a "fake" load on refresh if we want that effect. 
-  // Here, we trigger it only if we just finished onboarding OR if it's a fresh load.
   const [resourcesLoaded, setResourcesLoaded] = useState(false);
 
   // Persistence
@@ -103,6 +106,10 @@ const App: React.FC = () => {
 
   const incrementTrueWar = () => {
     setLimits(prev => ({ ...prev, trueWarCount: prev.trueWarCount + 1 }));
+  };
+  
+  const incrementNeonHockey = () => {
+    setLimits(prev => ({ ...prev, neonHockeyCount: prev.neonHockeyCount + 1 }));
   };
 
   const updateTriumphTime = (secondsUsed: number) => {
@@ -189,6 +196,13 @@ const App: React.FC = () => {
           updateBalance={updateBalance}
           onPlayRound={incrementTrueWar}
         />;
+      case 'neonhockey':
+        return <NeonHockeyGame
+          onBack={handleBackToHome}
+          balance={user.balance}
+          updateBalance={updateBalance}
+          onPlayRound={incrementNeonHockey}
+        />;
       
       // Previously Locked Games - Now Active
       case 'minesweeper':
@@ -222,7 +236,7 @@ const App: React.FC = () => {
   }
 
   // 3. Main Application
-  const isGameView = ['balloon', 'minesweeper', 'tradeboss', 'triumph', 'truewar'].includes(currentView);
+  const isGameView = ['balloon', 'minesweeper', 'tradeboss', 'triumph', 'truewar', 'neonhockey'].includes(currentView);
 
   return (
     <div className="min-h-screen bg-slate-900 text-white font-sans max-w-md mx-auto relative shadow-2xl overflow-hidden flex flex-col">

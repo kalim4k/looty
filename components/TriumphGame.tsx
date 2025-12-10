@@ -54,8 +54,8 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
   const comboRef = useRef(0);
   const shakeIntensityRef = useRef(0);
   const firstBallLandedXRef = useRef<number | null>(null); 
-  const requestRef = useRef<number>();
-  const shootingIntervalRef = useRef<any>();
+  const requestRef = useRef<number>(0);
+  const shootingIntervalRef = useRef<any>(null);
   const dragStartRef = useRef<{x: number, y: number} | null>(null);
   const aimAngleRef = useRef<number | null>(null);
   const totalSessionEarningsRef = useRef(0); // Tracks total earnings for the result screen
@@ -348,7 +348,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
        ballsRef.current = [];
        generateRow(); // Generate immediately when last ball is dead
        
-       if (gameStateRef.current !== 'GAMEOVER') {
+       if ((gameStateRef.current as GameState) !== 'GAMEOVER') {
            gameStateRef.current = 'AIMING';
        }
     }

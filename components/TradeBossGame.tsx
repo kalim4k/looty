@@ -34,7 +34,7 @@ const TradeBossGame: React.FC<TradeBossGameProps> = ({ onBack, balance, updateBa
   const [entryPrice, setEntryPrice] = useState<number | null>(null);
   const [pnl, setPnl] = useState(0); 
   
-  const requestRef = useRef<number>();
+  const requestRef = useRef<number>(0);
   const lastUpdateRef = useRef<number>(0);
   const counterRef = useRef(0);
 

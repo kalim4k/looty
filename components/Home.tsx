@@ -9,6 +9,7 @@ interface HomeProps {
     balloonCount: number;
     trueWarCount: number;
     triumphSecondsRemaining: number;
+    neonHockeyCount: number;
   };
 }
 
@@ -17,10 +18,11 @@ const Home: React.FC<HomeProps> = ({ onPlayGame, balance, userName, limits }) =>
 
   const games = [
     { id: 'truewar', name: 'True War', color: 'from-blue-500 to-cyan-400', icon: '🔫', status: 'NEW', locked: false, limit: 1, current: limits.trueWarCount },
+    { id: 'neonhockey', name: 'Neon Hockey', color: 'from-green-400 to-blue-500', icon: '🏒', status: 'LIVE', locked: false, limit: 5, current: limits.neonHockeyCount },
     { id: 'balloon', name: 'Balloon Pop', color: 'from-pink-500 to-red-500', icon: '🎈', status: 'LIVE', locked: false, limit: 15, current: limits.balloonCount },
     { id: 'triumph', name: 'Triumph', color: 'from-purple-500 to-indigo-600', icon: '⚔️', status: 'LIVE', locked: false, limitType: 'time', limit: 60, current: 60 - limits.triumphSecondsRemaining },
     
-    // Locked Games (Only Kalim can play)
+    // Locked Games
     { id: 'tradeboss', name: 'Trade Boss', color: 'from-blue-600 to-cyan-500', icon: '📈', status: 'LIVE', locked: true },
     { id: 'minesweeper', name: 'Minesweeper', color: 'from-emerald-400 to-emerald-600', icon: '💣', status: 'LIVE', locked: true },
     { id: 'mine', name: 'Mine', color: 'from-amber-400 to-orange-500', icon: '💎', status: 'SOON', locked: true },
@@ -53,6 +55,10 @@ const Home: React.FC<HomeProps> = ({ onPlayGame, balance, userName, limits }) =>
     }
     if (game.id === 'triumph' && limits.triumphSecondsRemaining <= 0) {
       setPopup({ show: true, title: "Temps Écoulé", message: "Vous avez épuisé vos 60 secondes de Triumph pour aujourd'hui.", type: 'info' });
+      return;
+    }
+    if (game.id === 'neonhockey' && limits.neonHockeyCount >= 5) {
+      setPopup({ show: true, title: "Limite Atteinte", message: "Vous avez utilisé vos 5 parties de Neon Hockey aujourd'hui.", type: 'info' });
       return;
     }
 
