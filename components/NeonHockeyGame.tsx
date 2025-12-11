@@ -78,6 +78,10 @@ interface Particle {
   x: number; y: number; vx: number; vy: number; life: number; color: string; size: number;
 }
 
+interface FloatingText {
+  x: number; y: number; text: string; life: number; color: string; vy: number; size: number; font: string;
+}
+
 interface NeonHockeyGameProps {
   onBack: () => void;
   balance: number;
@@ -100,14 +104,33 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
   // Game Logic State
   const scoresRef = useRef({ player: 0, ai: 0 });
   const particlesRef = useRef<Particle[]>([]);
+  const textsRef = useRef<FloatingText[]>([]);
   const shakeRef = useRef(0);
+  const comboRef = useRef(0);
   const touchOffsetRef = useRef({ x: 0, y: 0 });
   const requestRef = useRef<number>(0);
+  const sessionEarningsRef = useRef(0);
 
   // UI State
   const [uiState, setUiState] = useState<GameState>('THEME_SELECT');
   const [winner, setWinner] = useState<'PLAYER' | 'AI' | null>(null);
   const [payout, setPayout] = useState(0);
+  const [displayBalance, setDisplayBalance] = useState(balance);
+
+  // Balance Animation Loop
+  useEffect(() => {
+    let animationFrame: number;
+    const animateBalance = () => {
+        setDisplayBalance(prev => {
+            const diff = balance - prev;
+            if (Math.abs(diff) < 1) return balance;
+            return prev + diff * 0.1;
+        });
+        animationFrame = requestAnimationFrame(animateBalance);
+    };
+    animateBalance();
+    return () => cancelAnimationFrame(animationFrame);
+  }, [balance]);
 
   const selectTheme = (themeId: 'neon' | 'ice' | 'soccer') => {
     setCurrentTheme(THEMES[themeId]);
@@ -122,6 +145,10 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
     aiRef.current = { x: CANVAS_WIDTH / 2, y: 100, vx: 0, vy: 0 };
     setWinner(null);
     setPayout(0);
+    comboRef.current = 0;
+    sessionEarningsRef.current = 0;
+    textsRef.current = [];
+    particlesRef.current = [];
     gameStateRef.current = 'PLAYING';
     setUiState('PLAYING');
     onPlayRound();
@@ -132,6 +159,7 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
     puckRef.current.y = CANVAS_HEIGHT / 2;
     puckRef.current.vx = 0;
     puckRef.current.vy = 0;
+    comboRef.current = 0;
     
     // Serve to the person who got scored on
     setTimeout(() => {
@@ -158,7 +186,21 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
     }
   };
 
-  const handleCollision = (p1: any, r1: number, p2: any, r2: number) => {
+  const spawnText = (x: number, y: number, text: string, color: string, size: number = 20) => {
+     textsRef.current.push({
+         x, y, text, color, life: 1.0, vy: -2, size, font: 'Inter, sans-serif'
+     });
+  };
+
+  const addMoney = (amount: number, x: number, y: number, showText: boolean = true) => {
+      updateBalance(amount);
+      sessionEarningsRef.current += amount;
+      if (showText) {
+          spawnText(x, y, `+${amount}`, '#fbbf24', 24);
+      }
+  };
+
+  const handleCollision = (p1: any, r1: number, p2: any, r2: number, isPaddle: boolean = false) => {
     const dx = p1.x - p2.x;
     const dy = p1.y - p2.y;
     const dist = Math.sqrt(dx * dx + dy * dy);
@@ -193,6 +235,15 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
       shakeRef.current = 5;
       const particleColor = currentTheme.id === 'neon' ? '#fff' : (currentTheme.id === 'soccer' ? '#fff' : '#9ca3af');
       spawnParticles((p1.x + p2.x)/2, (p1.y + p2.y)/2, particleColor, 10, 5);
+
+      if (isPaddle) {
+          comboRef.current++;
+          if (comboRef.current > 1) {
+              const comboText = comboRef.current > 5 ? `SUPER ${comboRef.current}x` : `${comboRef.current}x`;
+              const comboColor = comboRef.current > 5 ? '#f472b6' : '#fff';
+              spawnText((p1.x + p2.x)/2, (p1.y + p2.y)/2 - 30, comboText, comboColor, 16 + Math.min(20, comboRef.current * 2));
+          }
+      }
     }
   };
 
@@ -229,23 +280,17 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
             aiTargetX += Math.sin(Date.now() / 200) * 20; 
 
             // --- ANTI-STICKING LOGIC ---
-            // Prevent AI from pinning puck against side walls
             if (puck.x < PUCK_RADIUS * 3) {
-                // Puck is near left wall: AI stays slightly to the right to push it out/down, not into wall
                 aiTargetX = Math.max(aiTargetX, puck.x + 30);
             } else if (puck.x > CANVAS_WIDTH - PUCK_RADIUS * 3) {
-                // Puck is near right wall: AI stays slightly to the left
                 aiTargetX = Math.min(aiTargetX, puck.x - 30);
             }
 
-            // Stuck detection: If velocity is very low and near AI, force AI to retreat
             const distSq = (puck.x - ai.x)**2 + (puck.y - ai.y)**2;
             const speedSq = puck.vx**2 + puck.vy**2;
-            
-            // If AI is touching puck and puck is barely moving (stuck), back off
             if (distSq < (PADDLE_RADIUS + PUCK_RADIUS + 5)**2 && speedSq < 2.0) {
-                 aiTargetY = 150; // Retreat up/down towards center
-                 aiTargetX = CANVAS_WIDTH / 2; // Retreat to center X
+                 aiTargetY = 150; 
+                 aiTargetX = CANVAS_WIDTH / 2;
             }
         } else {
             aiTargetX = CANVAS_WIDTH / 2;
@@ -274,22 +319,32 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
             puck.x = PUCK_RADIUS;
             puck.vx *= -WALL_BOUNCE;
             spawnParticles(puck.x, puck.y, currentTheme.wallLeft[0], 3, 2);
+            comboRef.current++;
+            addMoney(2, puck.x + 20, puck.y, false); // No text
+            shakeRef.current = 3;
         } else if (puck.x > CANVAS_WIDTH - PUCK_RADIUS) {
             puck.x = CANVAS_WIDTH - PUCK_RADIUS;
             puck.vx *= -WALL_BOUNCE;
             spawnParticles(puck.x, puck.y, currentTheme.wallRight[0], 3, 2);
+            comboRef.current++;
+            addMoney(2, puck.x - 20, puck.y, false); // No text
+            shakeRef.current = 3;
         }
 
         if (puck.y < PUCK_RADIUS) {
             if (Math.abs(puck.x - CANVAS_WIDTH/2) < GOAL_WIDTH / 2) {
+                // PLAYER GOAL
                 scoresRef.current.player++;
-                spawnParticles(puck.x, puck.y, currentTheme.accent, 30, 8);
-                shakeRef.current = 15;
+                spawnParticles(puck.x, puck.y, currentTheme.accent, 50, 10);
+                addMoney(300, CANVAS_WIDTH/2, CANVAS_HEIGHT/2); // Show text (default)
+                shakeRef.current = 20;
+                spawnText(CANVAS_WIDTH/2, CANVAS_HEIGHT/2 - 50, "GOAL!", "#22c55e", 60);
+                
                 if (scoresRef.current.player >= 3) {
                     gameStateRef.current = 'GAMEOVER';
                     setWinner('PLAYER');
                     setPayout(50);
-                    updateBalance(50);
+                    updateBalance(50); // Bonus win
                     setUiState('GAMEOVER');
                 } else {
                     resetPuck('PLAYER');
@@ -300,9 +355,12 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
             }
         } else if (puck.y > CANVAS_HEIGHT - PUCK_RADIUS) {
             if (Math.abs(puck.x - CANVAS_WIDTH/2) < GOAL_WIDTH / 2) {
+                // AI GOAL
                 scoresRef.current.ai++;
-                spawnParticles(puck.x, puck.y, currentTheme.accent, 30, 8);
+                spawnParticles(puck.x, puck.y, '#ef4444', 30, 8);
                 shakeRef.current = 15;
+                spawnText(CANVAS_WIDTH/2, CANVAS_HEIGHT/2 + 50, "OUCH!", "#ef4444", 40);
+
                 if (scoresRef.current.ai >= 3) {
                     gameStateRef.current = 'GAMEOVER';
                     setWinner('AI');
@@ -316,8 +374,8 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
             }
         }
 
-        handleCollision(puck, PUCK_RADIUS, player, PADDLE_RADIUS);
-        handleCollision(puck, PUCK_RADIUS, ai, PADDLE_RADIUS);
+        handleCollision(puck, PUCK_RADIUS, player, PADDLE_RADIUS, true);
+        handleCollision(puck, PUCK_RADIUS, ai, PADDLE_RADIUS, true);
     }
 
     // --- RENDER ---
@@ -450,6 +508,21 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
     });
     particlesRef.current = particlesRef.current.filter(p => p.life > 0);
 
+    // Floating Texts
+    textsRef.current.forEach(t => {
+        t.y += t.vy; t.life -= 0.02;
+        ctx.globalAlpha = Math.max(0, t.life);
+        ctx.save(); ctx.translate(t.x, t.y);
+        ctx.fillStyle = t.color;
+        ctx.shadowColor = t.color; ctx.shadowBlur = 10;
+        ctx.font = `900 ${t.size}px ${t.font}`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(t.text, 0, 0);
+        ctx.restore();
+        ctx.globalAlpha = 1;
+    });
+    textsRef.current = textsRef.current.filter(t => t.life > 0);
+
     // Score overlay
     if (gameStateRef.current !== 'THEME_SELECT' && gameStateRef.current !== 'MENU') {
         ctx.shadowBlur = 0;
@@ -460,6 +533,16 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
         ctx.textBaseline = 'middle';
         ctx.fillText(scoresRef.current.ai.toString(), CANVAS_WIDTH/2 + 80, CANVAS_HEIGHT/2 - 40);
         ctx.fillText(scoresRef.current.player.toString(), CANVAS_WIDTH/2 + 80, CANVAS_HEIGHT/2 + 40);
+        
+        // Combo Display
+        if (comboRef.current > 2) {
+            ctx.font = `900 ${30 + Math.min(30, comboRef.current * 2)}px Inter, sans-serif`;
+            const hue = (Date.now() / 10) % 360;
+            ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
+            ctx.shadowColor = `hsl(${hue}, 100%, 60%)`;
+            ctx.shadowBlur = 20;
+            ctx.fillText(`${comboRef.current}x`, CANVAS_WIDTH/2, CANVAS_HEIGHT/2);
+        }
     }
 
     ctx.restore();
@@ -515,8 +598,12 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
          <button onClick={onBack} className={`p-3 rounded-full pointer-events-auto active:scale-95 transition border ${currentTheme.id === 'neon' ? 'bg-white/10 border-white/10' : 'bg-black/5 border-black/10'}`}>
             <IconChevronLeft className={`w-6 h-6 ${currentTheme.id === 'neon' ? 'text-white' : 'text-white'}`} />
          </button>
-         <div className={`backdrop-blur px-4 py-1 rounded-full border ${currentTheme.id === 'neon' ? 'bg-black/50 border-white/10' : 'bg-white/20 border-white/20'}`}>
-            <span className={`font-bold font-mono uppercase ${currentTheme.id === 'neon' ? 'text-white' : 'text-white'}`}>{currentTheme.id === 'neon' ? 'NEON' : (currentTheme.id === 'soccer' ? 'FOOTBALL' : 'GLACE')}</span>
+         
+         <div className="flex flex-col items-end pointer-events-none">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-white/60">SOLDE</div>
+            <div className={`text-2xl font-black tabular-nums transition-colors duration-200 ${currentTheme.id === 'neon' ? 'text-white' : 'text-white drop-shadow-md'}`}>
+               {Math.floor(displayBalance).toLocaleString()} <span className="text-sm">FCFA</span>
+            </div>
          </div>
       </div>
 
@@ -614,13 +701,19 @@ const NeonHockeyGame: React.FC<NeonHockeyGameProps> = ({ onBack, balance, update
              <>
                <IconTrophy className="w-32 h-32 text-yellow-400 mb-6 drop-shadow-[0_0_50px_#fbbf24]" />
                <div className="text-6xl font-black text-white mb-2 italic">VICTOIRE!</div>
-               <div className="text-green-400 font-black text-3xl mb-8">+{payout} FCFA</div>
+               <div className="flex flex-col items-center bg-white/10 rounded-2xl p-6 border border-white/20 mb-8">
+                   <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">Gains Totaux</div>
+                   <div className="text-green-400 font-black text-4xl drop-shadow-[0_0_20px_#4ade80]">{sessionEarningsRef.current} FCFA</div>
+               </div>
              </>
           ) : (
              <>
                <div className="text-6xl mb-6">💀</div>
                <div className="text-6xl font-black text-red-500 mb-2 italic">DÉFAITE</div>
-               <div className="text-slate-400 font-bold text-lg mb-8">L'IA t'a écrasé...</div>
+               <div className="flex flex-col items-center bg-white/10 rounded-2xl p-6 border border-white/20 mb-8">
+                   <div className="text-xs text-slate-400 font-bold uppercase tracking-widest mb-2">Gains de session</div>
+                   <div className="text-green-400 font-black text-2xl">{sessionEarningsRef.current} FCFA</div>
+               </div>
              </>
           )}
           
