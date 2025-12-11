@@ -49,7 +49,7 @@ const InstallPWA: React.FC = () => {
            <img 
               src="https://bienetrechien.com/wp-content/uploads/2025/12/Gemini_Generated_Image_zh832bzh832bzh83.png" 
               alt="Looty Icon" 
-              className="w-14 h-14 rounded-xl shadow-lg"
+              className="w-14 h-14 rounded-2xl shadow-lg"
            />
            <div>
               <h3 className="text-white font-bold text-lg leading-tight">Installer Looty</h3>
