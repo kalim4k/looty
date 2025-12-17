@@ -112,6 +112,9 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
     }
 
     const level = scoreRef.current;
+    // Calculation: HP increases by 2 each level (Level 1 = 1, Level 2 = 3, Level 3 = 5...)
+    const currentHpValue = 1 + (level - 1) * 2;
+    
     let hasBlock = false;
     const bonusIndex = Math.floor(Math.random() * COLS);
 
@@ -125,8 +128,8 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
         id: Math.random(), c, r: 0,
         x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING,
         y: 80 + BLOCK_PADDING,
-        hp: isBonus ? 1 : level,
-        maxHp: isBonus ? 1 : level,
+        hp: isBonus ? 1 : currentHpValue,
+        maxHp: isBonus ? 1 : currentHpValue,
         isBonus, color
       });
       if (!isBonus) hasBlock = true;
@@ -139,7 +142,7 @@ const TriumphGame: React.FC<TriumphGameProps> = ({ onBack, balance, updateBalanc
           id: Math.random(), c, r: 0,
           x: c * (BLOCK_WIDTH + BLOCK_PADDING) + BLOCK_PADDING,
           y: 80 + BLOCK_PADDING,
-          hp: level, maxHp: level, isBonus: false, color: COLORS[0]
+          hp: currentHpValue, maxHp: currentHpValue, isBonus: false, color: COLORS[0]
        });
     }
   };
