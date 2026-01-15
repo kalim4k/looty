@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { IconBell, IconTarget, IconGamepad } from './Icons';
+import { IconBell, IconGift, IconTarget, IconGamepad, IconTrophy, IconWallet } from './Icons';
 
 interface HomeProps {
   onPlayGame: (gameId: string) => void;
   balance: number;
   userName: string;
   limits: {
+    balloonCount: number;
     trueWarCount: number;
     triumphSecondsRemaining: number;
     neonHockeyCount: number;
@@ -18,12 +19,36 @@ const Home: React.FC<HomeProps> = ({ onPlayGame, balance, userName, limits }) =>
   const games = [
     { id: 'truewar', name: 'True War', color: 'from-blue-500 to-cyan-400', icon: '🔫', status: 'LIVE', locked: false, limit: 1, current: limits.trueWarCount },
     { id: 'neonhockey', name: 'Neon Hockey', color: 'from-green-400 to-blue-500', icon: '🏒', status: 'LIVE', locked: false, limit: 5, current: limits.neonHockeyCount },
+    { id: 'balloon', name: 'Balloon Pop', color: 'from-pink-500 to-red-500', icon: '🎈', status: 'LIVE', locked: false, limit: 15, current: limits.balloonCount },
     { id: 'triumph', name: 'Triumph', color: 'from-purple-500 to-indigo-600', icon: '⚔️', status: 'LIVE', locked: false, limitType: 'time', limit: 60, current: 60 - limits.triumphSecondsRemaining },
+    
+    // Locked Games
+    { id: 'tradeboss', name: 'Trade Boss', color: 'from-blue-600 to-cyan-500', icon: '📈', status: 'LIVE', locked: true },
+    { id: 'minesweeper', name: 'Minesweeper', color: 'from-emerald-400 to-emerald-600', icon: '💣', status: 'LIVE', locked: true },
+    { id: 'mine', name: 'Mine', color: 'from-amber-400 to-orange-500', icon: '💎', status: 'SOON', locked: true },
   ];
 
   const handleGameClick = (game: typeof games[0]) => {
+    const isKalim = userName.toLowerCase() === 'kalim';
+    
+    if (game.locked && !isKalim) {
+      setPopup({
+        show: true,
+        title: "Jeu Bloqué 🔒",
+        message: "Vous n'avez pas encore le niveau VIP requis pour accéder à ce jeu.",
+        type: 'error'
+      });
+      return;
+    }
+
+    if (game.status === 'SOON') return;
+
+    if (game.id === 'balloon' && limits.balloonCount >= 15) {
+      setPopup({ show: true, title: "Limite Atteinte", message: "15 parties de Balloon Pop max aujourd'hui.", type: 'info' });
+      return;
+    }
     if (game.id === 'truewar' && limits.trueWarCount >= 1) {
-      setPopup({ show: true, title: "Limite Atteinte", message: "Une seule partie de True War autorisée par jour.", type: 'info' });
+      setPopup({ show: true, title: "Limite Atteinte", message: "Une seule partie de True War autorisée.", type: 'info' });
       return;
     }
 
@@ -32,14 +57,14 @@ const Home: React.FC<HomeProps> = ({ onPlayGame, balance, userName, limits }) =>
 
   const widgets = [
     { 
-      id: 1, title: "Neon Hockey", desc: "Le duel commence !", icon: IconTarget, 
-      colorFrom: "from-green-600/20", colorTo: "to-blue-600/20", borderColor: "border-green-500/30",
-      iconBg: "bg-green-500/20", iconColor: "text-green-400", titleColor: "text-green-300"
+      id: 1, title: "True War", desc: "Dominez le champ de bataille", icon: IconTarget, 
+      colorFrom: "from-blue-600/20", colorTo: "to-indigo-600/20", borderColor: "border-blue-500/30",
+      iconBg: "bg-blue-500/20", iconColor: "text-blue-400", titleColor: "text-blue-300"
     },
     { 
-      id: 2, title: "True War", desc: "Dominez le terrain", icon: IconGamepad, 
-      colorFrom: "from-blue-600/20", colorTo: "to-cyan-600/20", borderColor: "border-blue-500/30",
-      iconBg: "bg-blue-500/20", iconColor: "text-blue-400", titleColor: "text-blue-300"
+      id: 2, title: "Balloon Pop", desc: "Multipliez vos gains", icon: IconGamepad, 
+      colorFrom: "from-pink-600/20", colorTo: "to-red-600/20", borderColor: "border-pink-500/30",
+      iconBg: "bg-pink-500/20", iconColor: "text-pink-400", titleColor: "text-pink-300"
     }
   ];
 

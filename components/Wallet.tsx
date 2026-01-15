@@ -4,9 +4,9 @@ import { IconChevronLeft } from './Icons';
 interface WalletProps {
   balance: number;
   limits: {
+    balloonCount: number;
     trueWarCount: number;
     triumphSecondsRemaining: number;
-    neonHockeyCount: number;
     adClicks: { [index: number]: number };
   };
   onAdClick: (index: number) => boolean;
@@ -54,6 +54,7 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
       setWithdrawError('Solde insuffisant. Minimum: 150,000 FCFA.');
       return;
     }
+    // Simulate API call
     updateBalance(-150000);
     setWithdrawSuccess(true);
     setTimeout(() => {
@@ -73,6 +74,7 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
     <div className="min-h-screen px-4 pt-8 pb-24 relative">
       <h1 className="text-3xl font-black text-white mb-8">Portefeuille</h1>
 
+      {/* Main Balance Card */}
       <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-6 shadow-2xl mb-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-10 -mt-10" />
         <div className="relative z-10">
@@ -81,27 +83,31 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
             {balance.toLocaleString()} <span className="text-2xl opacity-70">FCFA</span>
           </div>
           
-          <button 
-            onClick={() => setShowWithdraw(true)}
-            className="w-full py-4 bg-white text-blue-800 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
-          >
-            RETIRER MES GAINS
-          </button>
+          <div className="flex gap-3">
+             <button 
+               onClick={() => setShowWithdraw(true)}
+               className="flex-1 py-4 bg-white text-blue-800 rounded-xl font-black shadow-lg active:scale-95 transition-transform flex items-center justify-center gap-2"
+             >
+               <IconChevronLeft className="rotate-90 w-5 h-5" />
+               RETIRER
+             </button>
+          </div>
         </div>
       </div>
 
+      {/* Daily Limits Tracker */}
       <h2 className="text-xl font-bold text-white mb-4">Objectifs Quotidiens</h2>
       <div className="grid grid-cols-1 gap-3 mb-8">
          <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">🔫</div>
+               <div className="w-10 h-10 rounded-full bg-pink-500/20 text-pink-400 flex items-center justify-center text-xl">🎈</div>
                <div>
-                  <div className="font-bold text-white">True War</div>
-                  <div className="text-xs text-slate-400">1 partie / jour</div>
+                  <div className="font-bold text-white">Balloon Pop</div>
+                  <div className="text-xs text-slate-400">15 parties / jour</div>
                </div>
             </div>
-            <div className={`font-mono font-bold ${limits.trueWarCount >= 1 ? 'text-green-400' : 'text-yellow-400'}`}>
-               {limits.trueWarCount}/1 {limits.trueWarCount >= 1 && '✅'}
+            <div className={`font-mono font-bold ${limits.balloonCount >= 15 ? 'text-green-400' : 'text-yellow-400'}`}>
+               {limits.balloonCount}/15 {limits.balloonCount >= 15 && '✅'}
             </div>
          </div>
 
@@ -120,18 +126,19 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
 
          <div className="bg-slate-800 p-4 rounded-2xl border border-slate-700 flex justify-between items-center">
             <div className="flex items-center gap-3">
-               <div className="w-10 h-10 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-xl">🏒</div>
+               <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">🔫</div>
                <div>
-                  <div className="font-bold text-white">Neon Hockey</div>
-                  <div className="text-xs text-slate-400">5 parties / jour</div>
+                  <div className="font-bold text-white">True War</div>
+                  <div className="text-xs text-slate-400">1 partie / jour</div>
                </div>
             </div>
-            <div className={`font-mono font-bold ${limits.neonHockeyCount >= 5 ? 'text-green-400' : 'text-yellow-400'}`}>
-               {limits.neonHockeyCount}/5 {limits.neonHockeyCount >= 5 && '✅'}
+            <div className={`font-mono font-bold ${limits.trueWarCount >= 1 ? 'text-green-400' : 'text-yellow-400'}`}>
+               {limits.trueWarCount}/1 {limits.trueWarCount >= 1 && '✅'}
             </div>
          </div>
       </div>
 
+      {/* Ads Section */}
       <div className="mb-8">
         <h2 className="text-xl font-bold text-white mb-2">Zone Publicitaire</h2>
         <div className="bg-slate-800/50 p-4 rounded-2xl border border-slate-700/50">
@@ -165,10 +172,15 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
         </div>
       </div>
 
+      {/* Withdrawal Popup */}
       {showWithdraw && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-pop-in p-4">
               <div className="bg-slate-900 border border-slate-700 rounded-3xl p-6 w-full max-w-md max-h-[85vh] overflow-y-auto relative shadow-2xl">
-                  <button onClick={() => setShowWithdraw(false)} className="absolute top-4 right-4 text-slate-400 bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center">✕</button>
+                  <button 
+                    onClick={() => { setShowWithdraw(false); setWithdrawError(''); setSelectedMethod(null); }}
+                    className="absolute top-4 right-4 text-slate-400 hover:text-white bg-slate-800 rounded-full w-8 h-8 flex items-center justify-center"
+                  >✕</button>
+                  
                   <h2 className="text-2xl font-black text-white mb-6">Retrait</h2>
                   
                   {withdrawSuccess ? (
@@ -186,7 +198,12 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
                                     <button
                                         key={method.name}
                                         onClick={() => setSelectedMethod(method.name)}
-                                        className={`flex flex-col items-center justify-center p-2 rounded-xl border transition-all ${selectedMethod === method.name ? 'bg-blue-600/20 border-blue-500 ring-1' : 'bg-slate-800 border-slate-700'}`}
+                                        className={`
+                                            flex flex-col items-center justify-center p-2 rounded-xl border transition-all
+                                            ${selectedMethod === method.name 
+                                                ? 'bg-blue-600/20 border-blue-500 ring-1 ring-blue-500' 
+                                                : 'bg-slate-800 border-slate-700 hover:bg-slate-700'}
+                                        `}
                                     >
                                         <img src={method.img} alt={method.name} className="w-8 h-8 object-contain mb-2 rounded-md" />
                                         <span className="text-[10px] font-bold text-center leading-tight">{method.name}</span>
@@ -194,12 +211,35 @@ const Wallet: React.FC<WalletProps> = ({ balance, limits, onAdClick, updateBalan
                                 ))}
                             </div>
                         </div>
+
                         <div className="mb-6">
                              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 block">Adresse de Retrait</label>
-                             <input type="text" value={withdrawAddress} onChange={(e) => setWithdrawAddress(e.target.value)} placeholder="Numéro / ID" className="w-full bg-slate-800 border border-slate-600 rounded-xl p-4 text-white font-mono placeholder-slate-500 outline-none" />
+                             <input 
+                               type="text" 
+                               value={withdrawAddress}
+                               onChange={(e) => setWithdrawAddress(e.target.value)}
+                               placeholder="Numéro de téléphone / ID"
+                               className="w-full bg-slate-800 border border-slate-600 rounded-xl p-4 text-white font-mono placeholder-slate-500 focus:border-blue-500 outline-none"
+                             />
                         </div>
-                        {withdrawError && <div className="text-red-400 text-sm font-bold text-center mb-4">{withdrawError}</div>}
-                        <button onClick={handleWithdraw} className="w-full py-4 bg-blue-600 text-white font-black text-lg rounded-xl">CONFIRMER</button>
+
+                        <div className="bg-slate-800/50 p-4 rounded-xl mb-6 flex justify-between items-center">
+                             <span className="text-sm text-slate-400">Montant (Min. 150k)</span>
+                             <span className="font-black text-white">150,000 FCFA</span>
+                        </div>
+
+                        {withdrawError && (
+                            <div className="text-red-400 text-sm font-bold text-center mb-4 bg-red-500/10 p-2 rounded-lg">
+                                {withdrawError}
+                            </div>
+                        )}
+
+                        <button 
+                            onClick={handleWithdraw}
+                            className="w-full py-4 bg-blue-600 hover:bg-blue-500 text-white font-black text-lg rounded-xl shadow-lg active:scale-95 transition-all"
+                        >
+                            CONFIRMER LE RETRAIT
+                        </button>
                       </>
                   )}
               </div>
